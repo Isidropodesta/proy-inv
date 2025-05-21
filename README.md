@@ -1,12 +1,3 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+El presente proyecto tiene como objetivo la formulación y planificación del desarrollo de un prototipo funcional (MVP) de una plataforma digital orientada a mejorar la gestión de inventarios en pequeñas y medianas empresas. La necesidad de contar con una herramienta eficiente de administración de stock es un desafío común para organizaciones que buscan optimizar sus procesos logísticos, reducir pérdidas por faltantes o excesos, y mantener una trazabilidad adecuada de sus productos.
+El sistema estará diseñado para permitir a los usuarios registrar productos, llevar un control actualizado de los niveles de inventario, identificar movimientos de entradas y salidas, y generar alertas automáticas de reposición en función de parámetros predefinidos por el usuario. De esta manera, se busca reducir la carga operativa manual, minimizar errores y asegurar una disponibilidad adecuada de los artículos en stock, con el objetivo de mejorar la toma de decisiones basada en datos.
+La solución será desarrollada como una aplicación web, lo que permitirá su acceso desde múltiples dispositivos con conexión a internet, brindando flexibilidad, disponibilidad y escalabilidad.
