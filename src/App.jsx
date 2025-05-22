@@ -1,7 +1,9 @@
-export default function App() {
-  return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-  )
-}
+const db = require("./models");
+db.sequelize
+  .sync()
+  .then(() => {
+    console.log("Base de datos sincronizada");
+  })
+  .catch((error) => {
+    console.error("Error al sincronizar la base de datos:", error);
+  });
