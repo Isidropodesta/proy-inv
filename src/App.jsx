@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-export default function App() {
-  return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-  )
-}
-=======
 import React from "react";
 import Header from "./assets/components/Header/header";
 import Footer from "./assets/components/Footer/footer";
@@ -23,4 +14,4 @@ export default function App() {
     </>
   );
 }
->>>>>>> front-vichen
+
