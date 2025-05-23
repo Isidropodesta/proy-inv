@@ -1,35 +1,37 @@
 import React from "react";
 
-export default function Header() {
+const Header = () => {
   return (
-    <header className="bg-blue-700 text-white shadow-md">
-      <div className="container mx-auto flex justify-between items-center py-4 px-6">
-        <h1 className="text-2xl font-bold cursor-pointer">StockPro</h1>
-        <nav>
-          <ul className="flex space-x-6">
-            <li>
-              <a href="#home" className="hover:text-gray-300">
-                Inicio
-              </a>
-            </li>
-            <li>
-              <a href="#features" className="hover:text-gray-300">
-                Funcionalidades
-              </a>
-            </li>
-            <li>
-              <a href="#pricing" className="hover:text-gray-300">
-                Precios
-              </a>
-            </li>
-            <li>
-              <a href="#contact" className="hover:text-gray-300">
-                Contacto
-              </a>
-            </li>
-          </ul>
+    <header className="bg-black text-white shadow-md w-full">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        {/* Logo y nombre */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/images/Logo.jpeg"
+            alt="iManaging Logo"
+            className="h-20 w-30 object-cover rounded-full"
+          />
+          <h1 className="text-2xl font-bold text-pink-500">iManaging</h1>
+        </div>
+
+        {/* Navegación */}
+        <nav className="hidden md:flex gap-6 text-lg">
+          <a href="#" className="hover:text-pink-400 transition-colors">
+            Inicio
+          </a>
+          <a href="#" className="hover:text-pink-400 transition-colors">
+            Productos
+          </a>
+          <a href="#" className="hover:text-pink-400 transition-colors">
+            Reportes
+          </a>
+          <a href="#" className="hover:text-pink-400 transition-colors">
+            Contacto
+          </a>
         </nav>
       </div>
     </header>
   );
-}
+};
+
+export default Header;
