@@ -3,18 +3,14 @@ import React, { useState } from "react";
 const Hero = () => {
   const [articulo, setArticulo] = useState("");
   const [articulos, setArticulos] = useState([]);
-<<<<<<< HEAD
   const [modoEdicion, setModoEdicion] = useState(false);
   const [articuloEditado, setArticuloEditado] = useState("");
   const [indexEditando, setIndexEditando] = useState(null);
-=======
->>>>>>> main
 
   const handleAgregar = () => {
     if (articulo.trim() === "") return;
     setArticulos([...articulos, articulo]);
     setArticulo("");
-<<<<<<< HEAD
     // Aquí podrías hacer POST al backend
   };
 
@@ -40,13 +36,6 @@ const Hero = () => {
     setArticuloEditado("");
     setIndexEditando(null);
     // Aquí podrías hacer PUT/PATCH al backend
-=======
-  };
-
-  const handleEliminar = (nombre) => {
-    const nuevosArticulos = articulos.filter((item) => item !== nombre);
-    setArticulos(nuevosArticulos);
->>>>>>> main
   };
 
   return (
@@ -57,19 +46,11 @@ const Hero = () => {
           Sección de <span className="text-pink-600">Artículos</span>
         </h1>
         <p className="text-lg text-gray-700 max-w-xl mx-auto">
-<<<<<<< HEAD
           Agrega, edita o elimina artículos de tu stock.
         </p>
       </div>
 
-      {/* Formulario de agregar */}
-=======
-          Agrega y elimina artículos de tu stock de manera eficiente.
-        </p>
-      </div>
-
       {/* Formulario para agregar */}
->>>>>>> main
       <div className="flex flex-col sm:flex-row gap-4 items-center w-full max-w-xl">
         <input
           type="text"
@@ -96,7 +77,6 @@ const Hero = () => {
                 key={index}
                 className="flex justify-between items-center bg-gray-100 px-4 py-2 rounded-md"
               >
-<<<<<<< HEAD
                 {modoEdicion && index === indexEditando ? (
                   <div className="flex w-full gap-2 items-center">
                     <input
@@ -131,15 +111,6 @@ const Hero = () => {
                     </div>
                   </>
                 )}
-=======
-                <span>{item}</span>
-                <button
-                  onClick={() => handleEliminar(item)}
-                  className="text-sm text-red-500 hover:text-red-700"
-                >
-                  Eliminar
-                </button>
->>>>>>> main
               </li>
             ))}
           </ul>
@@ -148,15 +119,11 @@ const Hero = () => {
 
       {/* Imagen decorativa */}
       <div className="mt-10">
-<<<<<<< HEAD
         <img
           src="/assets/images/hero-image.png"
           alt="Control de stock"
           className="w-full max-w-md drop-shadow-lg mx-auto"
         />
-=======
-    
->>>>>>> main
       </div>
     </section>
   );
