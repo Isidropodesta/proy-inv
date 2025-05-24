@@ -1,78 +1,69 @@
 import React, { useState } from "react";
 
-const Hero = () => {
-  const [articulo, setArticulo] = useState("");
-  const [articulos, setArticulos] = useState([]);
+const OrdenDeCompra = () => {
+  const [ordenes, setOrdenes] = useState([]);
+  const [nuevaOrden, setNuevaOrden] = useState("");
   const [modoEdicion, setModoEdicion] = useState(false);
-  const [articuloEditado, setArticuloEditado] = useState("");
+  const [ordenEditada, setOrdenEditada] = useState("");
   const [indexEditando, setIndexEditando] = useState(null);
 
-  const handleAgregar = () => {
-    if (articulo.trim() === "") return;
-    setArticulos([...articulos, articulo]);
-    setArticulo("");
-    // Aquí podrías hacer POST al backend
+  const agregarOrden = () => {
+    if (nuevaOrden.trim() === "") return;
+    setOrdenes([...ordenes, nuevaOrden]);
+    setNuevaOrden("");
   };
 
-  const handleEliminar = (index) => {
-    const nuevosArticulos = [...articulos];
-    nuevosArticulos.splice(index, 1);
-    setArticulos(nuevosArticulos);
-    // Aquí podrías hacer DELETE al backend
+  const eliminarOrden = (index) => {
+    const actualizadas = [...ordenes];
+    actualizadas.splice(index, 1);
+    setOrdenes(actualizadas);
   };
 
   const iniciarEdicion = (index) => {
     setModoEdicion(true);
-    setArticuloEditado(articulos[index]);
+    setOrdenEditada(ordenes[index]);
     setIndexEditando(index);
   };
 
   const confirmarEdicion = () => {
-    if (articuloEditado.trim() === "") return;
-    const nuevosArticulos = [...articulos];
-    nuevosArticulos[indexEditando] = articuloEditado;
-    setArticulos(nuevosArticulos);
+    if (ordenEditada.trim() === "") return;
+    const actualizadas = [...ordenes];
+    actualizadas[indexEditando] = ordenEditada;
+    setOrdenes(actualizadas);
     setModoEdicion(false);
-    setArticuloEditado("");
+    setOrdenEditada("");
     setIndexEditando(null);
-    // Aquí podrías hacer PUT/PATCH al backend
   };
 
   return (
-    <section className="bg-white text-gray-900 py-20 px-6 md:px-20 flex flex-col gap-10 items-center">
-      {/* Título y descripción */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-          Sección de <span className="text-pink-600">Artículos</span>
-        </h1>
-        <p className="text-lg text-gray-700 max-w-xl mx-auto">
-          Agrega, edita o elimina artículos de tu stock.
-        </p>
-      </div>
+    <section className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-10 items-center">
+      <h1 className="text-3xl md:text-4xl font-bold text-center">
+        Módulo de <span className="text-pink-600">Órdenes de Compra</span>
+      </h1>
 
-      {/* Formulario para agregar */}
+      {/* Formulario de creación */}
       <div className="flex flex-col sm:flex-row gap-4 items-center w-full max-w-xl">
         <input
           type="text"
-          placeholder="Nombre del artículo"
+          placeholder="Nombre de la orden"
           className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          value={articulo}
-          onChange={(e) => setArticulo(e.target.value)}
+          value={nuevaOrden}
+          onChange={(e) => setNuevaOrden(e.target.value)}
         />
         <button
-          onClick={handleAgregar}
+          onClick={agregarOrden}
           className="bg-pink-600 text-white px-6 py-2 rounded-md hover:bg-pink-700 transition"
         >
-          Agregar
+          Crear orden
         </button>
       </div>
 
-      {/* Lista de artículos */}
-      {articulos.length > 0 && (
+      {/* Lista de órdenes */}
+      {ordenes.length > 0 && (
         <div className="w-full max-w-xl">
-          <h2 className="text-2xl font-semibold mb-4">Artículos actuales:</h2>
+          <h2 className="text-2xl font-semibold mb-4">Órdenes existentes:</h2>
           <ul className="space-y-2">
-            {articulos.map((item, index) => (
+            {ordenes.map((orden, index) => (
               <li
                 key={index}
                 className="flex justify-between items-center bg-gray-100 px-4 py-2 rounded-md"
@@ -81,8 +72,8 @@ const Hero = () => {
                   <div className="flex w-full gap-2 items-center">
                     <input
                       type="text"
-                      value={articuloEditado}
-                      onChange={(e) => setArticuloEditado(e.target.value)}
+                      value={ordenEditada}
+                      onChange={(e) => setOrdenEditada(e.target.value)}
                       className="flex-grow border border-gray-300 px-2 py-1 rounded"
                     />
                     <button
@@ -94,16 +85,16 @@ const Hero = () => {
                   </div>
                 ) : (
                   <>
-                    <span>{item}</span>
+                    <span>{orden}</span>
                     <div className="flex gap-3">
                       <button
                         onClick={() => iniciarEdicion(index)}
                         className="text-blue-500 hover:text-blue-700 text-sm"
                       >
-                        Editar
+                        Modificar
                       </button>
                       <button
-                        onClick={() => handleEliminar(index)}
+                        onClick={() => eliminarOrden(index)}
                         className="text-red-500 hover:text-red-700 text-sm"
                       >
                         Eliminar
@@ -115,9 +106,8 @@ const Hero = () => {
             ))}
           </ul>
         </div>
+        
       )}
-
-      {/* Imagen decorativa */}
       <div className="mt-10">
         <img
            src="/images/logo-limpio.png"
@@ -129,4 +119,4 @@ const Hero = () => {
   );
 };
 
-export default Hero;
+export default OrdenDeCompra;
