@@ -36,7 +36,7 @@ const OrdenDeCompra = () => {
   };
 
   return (
-    <section className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-10 items-center">
+    <section id="orden-compra" className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-10 items-center">
       <h1 className="text-3xl md:text-4xl font-bold text-center">
         Módulo de <span className="text-pink-600">Órdenes de Compra</span>
       </h1>

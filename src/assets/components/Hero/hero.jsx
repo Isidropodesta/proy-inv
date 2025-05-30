@@ -39,7 +39,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="bg-white text-gray-900 py-20 px-6 md:px-20 flex flex-col gap-10 items-center">
+    <section id="hero" className="bg-white text-gray-900 py-20 px-6 md:px-20 flex flex-col gap-10 items-center">
       {/* Título y descripción */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl md:text-5xl font-bold leading-tight">
