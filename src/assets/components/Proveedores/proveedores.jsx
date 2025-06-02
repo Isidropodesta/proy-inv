@@ -7,10 +7,13 @@ const Proveedor = () => {
     razon_social: "",
     telefono: ""
   });
+
   const [mensaje, setMensaje] = useState("");
   const [proveedores, setProveedores] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editandoId, setEditandoId] = useState(null); // id del proveedor que se está editando
+  const [editandoId, setEditandoId] = useState(null);
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleChange = (e) => {
     setFormulario({
@@ -33,61 +36,55 @@ const Proveedor = () => {
       return;
     }
 
-    try {
-      const dataToSend = {
-        ...formulario,
-        cuit: formulario.cuit.trim(),
-        telefono: formulario.telefono ? formulario.telefono.trim() : null,
-      };
+    const dataToSend = {
+      ...formulario,
+      cuit: formulario.cuit.trim(),
+      telefono: formulario.telefono?.trim() || null,
+    };
 
+    try {
       if (editandoId) {
-        // Modo edición -> PUT para actualizar
-        await axios.put(
-          `${import.meta.env.VITE_API_URL}/proveedores/${editandoId}`,
-          dataToSend,
-          { headers: { "Content-Type": "application/json" } }
-        );
+        await axios.put(`${API_URL}/proveedores/${editandoId}`, dataToSend, {
+          headers: { "Content-Type": "application/json" },
+        });
         setMensaje("Proveedor actualizado con éxito");
       } else {
-        // Modo creación -> POST para crear
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/proveedores`,
-          dataToSend,
-          { headers: { "Content-Type": "application/json" } }
-        );
+        await axios.post(`${API_URL}/proveedores`, dataToSend, {
+          headers: { "Content-Type": "application/json" },
+        });
         setMensaje("Proveedor creado con éxito");
       }
 
       resetFormulario();
       fetchProveedores();
     } catch (error) {
-      console.error(error);
-      if (error.response && error.response.data) {
-        setMensaje(`Error: ${error.response.data.error || error.response.statusText}`);
-      } else {
-        setMensaje(editandoId ? "Error al actualizar proveedor" : "Error al crear proveedor");
-      }
+      console.error("Error al guardar proveedor:", error);
+      setMensaje(
+        error.response?.data?.error ||
+        (editandoId
+          ? "Error al actualizar proveedor"
+          : "Error al crear proveedor")
+      );
     }
   };
 
-  // Traer proveedores del backend
   const fetchProveedores = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/proveedores`);
+      const res = await axios.get(`${API_URL}/proveedores`);
       setProveedores(res.data);
     } catch (error) {
       console.error("Error al traer proveedores", error);
     }
   };
 
-  // Traer proveedores cuando se abre el modal
   useEffect(() => {
-    if (modalOpen) {
-      fetchProveedores();
-    }
+    fetchProveedores();
+  }, []);
+
+  useEffect(() => {
+    if (modalOpen) fetchProveedores();
   }, [modalOpen]);
 
-  // Cargar proveedor en el formulario para editar
   const handleEditar = (proveedor) => {
     setFormulario({
       cuit: proveedor.cuit || "",
@@ -96,7 +93,18 @@ const Proveedor = () => {
     });
     setEditandoId(proveedor.id_proveedor);
     setMensaje("");
-    setModalOpen(false); // cerramos modal para editar
+  };
+
+  const handleEliminar = async (id) => {
+    // Aquí ya no preguntamos, la confirmación la hace el botón
+    try {
+      await axios.delete(`${API_URL}/proveedores/${id}`);
+      setMensaje("Proveedor eliminado con éxito");
+      fetchProveedores();
+    } catch (error) {
+      console.error("Error al eliminar proveedor:", error);
+      setMensaje("Error al eliminar proveedor");
+    }
   };
 
   return (
@@ -110,6 +118,7 @@ const Proveedor = () => {
           type="text"
           name="cuit"
           placeholder="CUIT"
+          autoComplete="off"
           value={formulario.cuit}
           onChange={handleChange}
           className="border px-4 py-2 rounded"
@@ -118,6 +127,7 @@ const Proveedor = () => {
           type="text"
           name="razon_social"
           placeholder="Razón Social"
+          autoComplete="off"
           value={formulario.razon_social}
           onChange={handleChange}
           className="border px-4 py-2 rounded"
@@ -126,6 +136,7 @@ const Proveedor = () => {
           type="text"
           name="telefono"
           placeholder="Teléfono"
+          autoComplete="off"
           value={formulario.telefono}
           onChange={handleChange}
           className="border px-4 py-2 rounded"
@@ -155,7 +166,6 @@ const Proveedor = () => {
         )}
       </form>
 
-      {/* Botón para abrir modal */}
       <div className="text-center mt-6">
         <button
           onClick={() => setModalOpen(true)}
@@ -165,38 +175,49 @@ const Proveedor = () => {
         </button>
       </div>
 
-      {/* Modal */}
       {modalOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setModalOpen(false)} // cerrar modal si clickeas fuera
+          onClick={() => setModalOpen(false)}
         >
           <div
             className="bg-white rounded-lg p-6 max-w-lg w-full"
-            onClick={e => e.stopPropagation()} // evitar cerrar modal al click adentro
+            onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-xl font-semibold mb-4">Lista de Proveedores</h3>
             {proveedores.length === 0 ? (
               <p>No hay proveedores para mostrar.</p>
             ) : (
-              <ul className="max-h-64 overflow-auto">
+              <ul className="max-h-64 overflow-auto space-y-4">
                 {proveedores.map((prov) => (
                   <li
                     key={prov.id_proveedor}
-                    className="border-b py-2 flex justify-between items-center"
+                    className="border-b pb-2 flex justify-between items-start gap-4"
                   >
-                    <div>
+                    <div className="text-sm space-y-1">
                       <p><strong>CUIT:</strong> {prov.cuit}</p>
                       <p><strong>Razón Social:</strong> {prov.razon_social}</p>
                       <p><strong>Teléfono:</strong> {prov.telefono || '-'}</p>
                       <p><strong>Vigente:</strong> {prov.proveedor_vigente ? 'Sí' : 'No'}</p>
                     </div>
-                    <button
-                      onClick={() => handleEditar(prov)}
-                      className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500"
-                    >
-                      Editar
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleEditar(prov)}
+                        className="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("¿Estás seguro de eliminar este proveedor?")) {
+                            handleEliminar(prov.id_proveedor);
+                          }
+                        }}
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
