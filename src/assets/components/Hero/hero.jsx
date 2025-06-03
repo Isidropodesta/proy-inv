@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -7,26 +6,27 @@ const API_URL = import.meta.env.VITE_API_URL;
 const Hero = () => {
   const [articulos, setArticulos] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-
   const [formArticulo, setFormArticulo] = useState({
-    nombre: "",
     descripcion: "",
-    precio: "",
-    proveedorId: "",
+    costo_compra: "",
+    proveedor: {
+      id_proveedor: null,
+      costo_pedido: 0,
+      modelo_inventario: "FIFO",
+      proveedor_predeterminado: false,
+      demora_entrega: 0,
+      precio_unitario: 0,
+    },
   });
-
-  const [relacionForm, setRelacionForm] = useState({
-    id_articulo: "",
-    id_proveedor: "",
-    costo_pedido: "",
-    modelo_inventario: "FIFO",
-    proveedor_predeterminado: false,
-    demora_entrega: "",
-    precio_unitario: "",
-  });
-
   const [mensaje, setMensaje] = useState("");
-  const [modalAbierto, setModalAbierto] = useState(false);
+
+  // Modal y edición
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editandoId, setEditandoId] = useState(null);
+  const [formEdicion, setFormEdicion] = useState({
+    descripcion: "",
+    costo_compra: "",
+  });
 
   // Traer artículos y proveedores
   const fetchDatos = async () => {
@@ -47,60 +47,90 @@ const Hero = () => {
     fetchDatos();
   }, []);
 
-  // Manejo formulario artículo
+  // Manejo formulario artículo nuevo
   const handleChangeArticulo = (e) => {
-    const { name, value } = e.target;
-    setFormArticulo((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, checked } = e.target;
+
+    if (name === "proveedorId") {
+      setFormArticulo((prev) => ({
+        ...prev,
+        proveedor: {
+          ...prev.proveedor,
+          id_proveedor: value ? Number(value) : null,
+        },
+      }));
+    } else if (name.startsWith("proveedor.")) {
+      const key = name.split(".")[1];
+      let val = value;
+      if (key === "proveedor_predeterminado") val = checked;
+      else if (
+        key === "costo_pedido" ||
+        key === "demora_entrega" ||
+        key === "precio_unitario"
+      )
+        val = Number(value) || 0;
+
+      setFormArticulo((prev) => ({
+        ...prev,
+        proveedor: {
+          ...prev.proveedor,
+          [key]: val,
+        },
+      }));
+    } else {
+      setFormArticulo((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
+  // Crear artículo
   const handleCrearArticulo = async (e) => {
     e.preventDefault();
 
-    if (!formArticulo.nombre.trim()) {
-      setMensaje("El nombre del artículo es obligatorio");
+    if (!formArticulo.descripcion.trim()) {
+      setMensaje("La descripción del artículo es obligatoria");
       return;
     }
 
     if (
-      !formArticulo.precio ||
-      isNaN(formArticulo.precio) ||
-      Number(formArticulo.precio) < 0
+      !formArticulo.costo_compra ||
+      isNaN(formArticulo.costo_compra) ||
+      Number(formArticulo.costo_compra) < 0
     ) {
-      setMensaje("El precio debe ser un número válido mayor o igual a 0");
+      setMensaje("El costo de compra debe ser un número válido mayor o igual a 0");
       return;
     }
 
     try {
-      const res = await axios.post(`${API_URL}/articulos`, {
-        nombre: formArticulo.nombre.trim(),
-        descripcion: formArticulo.descripcion.trim() || null,
-        precio: parseFloat(formArticulo.precio),
+      await axios.post(`${API_URL}/articulos`, {
+        descripcion: formArticulo.descripcion.trim(),
+        costo_compra: parseFloat(formArticulo.costo_compra),
+        proveedor: formArticulo.proveedor.id_proveedor
+          ? {
+              id_proveedor: formArticulo.proveedor.id_proveedor,
+              costo_pedido: Number(formArticulo.proveedor.costo_pedido) || 0,
+              modelo_inventario: formArticulo.proveedor.modelo_inventario || "FIFO",
+              proveedor_predeterminado: formArticulo.proveedor.proveedor_predeterminado,
+              demora_entrega: Number(formArticulo.proveedor.demora_entrega) || 0,
+              precio_unitario: Number(formArticulo.proveedor.precio_unitario) || 0,
+            }
+          : null,
       });
 
-      const nuevoArticulo = res.data;
-
-      // Si se seleccionó proveedor, crear la relación
-      if (formArticulo.proveedorId) {
-        await axios.post(`${API_URL}/articulo-proveedores`, {
-          id_articulo: nuevoArticulo.id_articulo,
-          id_proveedor: Number(formArticulo.proveedorId),
+      setMensaje("Artículo creado correctamente");
+      setFormArticulo({
+        descripcion: "",
+        costo_compra: "",
+        proveedor: {
+          id_proveedor: null,
           costo_pedido: 0,
           modelo_inventario: "FIFO",
           proveedor_predeterminado: false,
           demora_entrega: 0,
           precio_unitario: 0,
-        });
-      }
-
-      setMensaje("Artículo creado correctamente");
-      setFormArticulo({
-        nombre: "",
-        descripcion: "",
-        precio: "",
-        proveedorId: "",
+        },
       });
       fetchDatos();
     } catch (error) {
@@ -109,80 +139,88 @@ const Hero = () => {
     }
   };
 
-  // Manejo formulario relación artículo-proveedor
-  const handleChangeRelacion = (e) => {
-    const { name, value, type, checked } = e.target;
-    setRelacionForm((prev) => ({
+  // Abrir modal
+  const abrirModal = () => {
+    setModalOpen(true);
+    setEditandoId(null);
+    setMensaje("");
+  };
+
+  // Cerrar modal al hacer clic en fondo
+  const onClickFondo = () => {
+    setModalOpen(false);
+    setEditandoId(null);
+    setMensaje("");
+  };
+
+  // Manejo formulario edición
+  const iniciarEdicion = (art) => {
+    setEditandoId(art.id_articulo);
+    setFormEdicion({
+      descripcion: art.descripcion || "",
+      costo_compra: art.costo_compra?.toString() || "",
+    });
+    setMensaje("");
+  };
+
+  const handleChangeEdicion = (e) => {
+    const { name, value } = e.target;
+    setFormEdicion((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
-  const handleAsignarRelacion = async (e) => {
-    e.preventDefault();
-
-    const {
-      id_articulo,
-      id_proveedor,
-      costo_pedido,
-      modelo_inventario,
-      proveedor_predeterminado,
-      demora_entrega,
-      precio_unitario,
-    } = relacionForm;
-
-    if (!id_articulo || !id_proveedor) {
-      setMensaje("Debe seleccionar artículo y proveedor para asignar");
+  const guardarEdicion = async (id_articulo) => {
+    if (!formEdicion.descripcion.trim()) {
+      setMensaje("La descripción del artículo es obligatoria");
       return;
     }
-
     if (
-      isNaN(costo_pedido) ||
-      isNaN(demora_entrega) ||
-      isNaN(precio_unitario) ||
-      Number(costo_pedido) < 0 ||
-      Number(demora_entrega) < 0 ||
-      Number(precio_unitario) < 0
+      !formEdicion.costo_compra ||
+      isNaN(formEdicion.costo_compra) ||
+      Number(formEdicion.costo_compra) < 0
     ) {
-      setMensaje(
-        "Los campos numéricos deben ser números válidos y no negativos"
-      );
+      setMensaje("El costo de compra debe ser un número válido mayor o igual a 0");
       return;
     }
 
     try {
-      await axios.post(`${API_URL}/articulo-proveedores`, {
-        id_articulo: Number(id_articulo),
-        id_proveedor: Number(id_proveedor),
-        costo_pedido: Number(costo_pedido),
-        modelo_inventario,
-        proveedor_predeterminado,
-        demora_entrega: Number(demora_entrega),
-        precio_unitario: Number(precio_unitario),
+      await axios.put(`${API_URL}/articulos/${id_articulo}`, {
+        descripcion: formEdicion.descripcion.trim(),
+        costo_compra: parseFloat(formEdicion.costo_compra),
       });
 
-      setMensaje("Proveedor asignado al artículo correctamente");
-      setRelacionForm({
-        id_articulo: "",
-        id_proveedor: "",
-        costo_pedido: "",
-        modelo_inventario: "FIFO",
-        proveedor_predeterminado: false,
-        demora_entrega: "",
-        precio_unitario: "",
-      });
+      setMensaje("Artículo editado correctamente");
+      setEditandoId(null);
       fetchDatos();
     } catch (error) {
       console.error(error);
-      setMensaje("Error al asignar proveedor al artículo");
+      setMensaje("Error al editar artículo");
+    }
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoId(null);
+    setMensaje("");
+  };
+
+  // Eliminar artículo
+  const eliminarArticulo = async (id_articulo) => {
+    if (!window.confirm("¿Estás seguro de eliminar este artículo?")) return;
+
+    try {
+      await axios.delete(`${API_URL}/articulos/${id_articulo}`);
+      setMensaje("Artículo eliminado correctamente");
+      fetchDatos();
+    } catch (error) {
+      console.error(error);
+      setMensaje("Error al eliminar artículo");
     }
   };
 
   return (
-    <section
-      id="hero"
-      className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-10 items-center"
-    >
+    <section className="bg-white text-gray-900 py-6 px-4 md:px-12 flex flex-col gap-8 items-center  max-w-5xl mx-auto">
       <h1 className="text-3xl md:text-4xl font-bold text-center">
         Módulo de <span className="text-pink-600">Artículos</span>
       </h1>
@@ -190,217 +228,227 @@ const Hero = () => {
       {/* Formulario crear artículo */}
       <form
         onSubmit={handleCrearArticulo}
-        className="flex flex-col gap-4 w-full max-w-xl"
+        className="flex flex-col gap-3 w-full max-w-xl"
       >
         <input
           type="text"
-          name="nombre"
-          placeholder="Nombre del artículo"
-          value={formArticulo.nombre}
-          onChange={handleChangeArticulo}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          required
-        />
-        <textarea
           name="descripcion"
-          placeholder="Descripción (opcional)"
+          placeholder="Descripción del artículo"
           value={formArticulo.descripcion}
           onChange={handleChangeArticulo}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          required
         />
         <input
           type="number"
-          name="precio"
-          placeholder="Precio"
-          value={formArticulo.precio}
+          name="costo_compra"
+          placeholder="Costo de compra"
+          value={formArticulo.costo_compra}
           onChange={handleChangeArticulo}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
           min="0"
           step="0.01"
           required
         />
+
+        {/* Selector de proveedor */}
         <select
           name="proveedorId"
-          value={formArticulo.proveedorId}
+          value={formArticulo.proveedor.id_proveedor || ""}
           onChange={handleChangeArticulo}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+          className="border border-gray-300 px-3 py-2 rounded-md"
         >
-          <option value="">-- Seleccionar proveedor (opcional) --</option>
+          <option value="">Selecciona un proveedor (opcional)</option>
           {proveedores.map((prov) => (
             <option key={prov.id_proveedor} value={prov.id_proveedor}>
-              {prov.razon_social}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="bg-pink-600 text-white px-6 py-2 rounded-md hover:bg-pink-700 transition"
-        >
-          Confirmar creación
-        </button>
-      </form>
-
-      {/* Formulario asignar relación artículo-proveedor */}
-      <form
-        onSubmit={handleAsignarRelacion}
-        className="flex flex-col gap-4 w-full max-w-xl"
-      >
-        <h2 className="text-2xl font-semibold">
-          Asignar proveedor a artículo existente
-        </h2>
-<select
-  name="id_articulo"
-  value={relacionForm.id_articulo}
-  onChange={handleChangeRelacion}
-  className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-  style={{ color: "#1a202c", backgroundColor: "#fff" }} // colores explícitos para asegurar visibilidad
-  required
->
-  <option value="" style={{ color: "#a0aec0" }}>
-    -- Seleccionar artículo --
-  </option>
-  {articulos.map((art) => (
-    <option key={art.id_articulo} value={art.id_articulo}>
-      {art.nombre}
-    </option>
-  ))}
-</select>
-
-
-
-        <select
-          name="id_proveedor"
-          value={relacionForm.id_proveedor}
-          onChange={handleChangeRelacion}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          required
-        >
-          <option value="">-- Seleccionar proveedor --</option>
-          {proveedores.map((prov) => (
-            <option key={prov.id_proveedor} value={prov.id_proveedor}>
-              {prov.razon_social}
+              {prov.nombre}
             </option>
           ))}
         </select>
 
-        <input
-          type="number"
-          name="costo_pedido"
-          placeholder="Costo de pedido"
-          value={relacionForm.costo_pedido}
-          onChange={handleChangeRelacion}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          min="0"
-          step="0.01"
-          required
-        />
-
-        <select
-          name="modelo_inventario"
-          value={relacionForm.modelo_inventario}
-          onChange={handleChangeRelacion}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          required
-        >
-          <option value="FIFO">FIFO</option>
-          <option value="LIFO">LIFO</option>
-          <option value="PEPS">PEPS</option>
-          <option value="UEPS">UEPS</option>
-        </select>
-
-        <input
-          type="number"
-          name="demora_entrega"
-          placeholder="Demora entrega (días)"
-          value={relacionForm.demora_entrega}
-          onChange={handleChangeRelacion}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          min="0"
-          step="1"
-          required
-        />
-
-        <input
-          type="number"
-          name="precio_unitario"
-          placeholder="Precio unitario"
-          value={relacionForm.precio_unitario}
-          onChange={handleChangeRelacion}
-          className="border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          min="0"
-          step="0.01"
-          required
-        />
-
-      
+        {/* Campos adicionales para relación proveedor */}
+        {formArticulo.proveedor.id_proveedor && (
+          <div className="flex flex-col gap-3 border border-gray-200 p-4 rounded-md bg-gray-50">
+            <label className="flex flex-col text-sm">
+              Costo pedido:
+              <input
+                type="number"
+                name="proveedor.costo_pedido"
+                value={formArticulo.proveedor.costo_pedido}
+                onChange={handleChangeArticulo}
+                min="0"
+                step="0.01"
+                className="mt-1 border border-gray-300 rounded-md px-2 py-1"
+              />
+            </label>
+            <label className="flex flex-col text-sm">
+              Modelo inventario:
+              <select
+                name="proveedor.modelo_inventario"
+                value={formArticulo.proveedor.modelo_inventario}
+                onChange={handleChangeArticulo}
+                className="mt-1 border border-gray-300 rounded-md px-2 py-1"
+              >
+                <option value="FIFO">FIFO</option>
+                <option value="LIFO">LIFO</option>
+                <option value="PROMEDIO">Promedio</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="proveedor.proveedor_predeterminado"
+                checked={formArticulo.proveedor.proveedor_predeterminado}
+                onChange={handleChangeArticulo}
+              />
+              Proveedor predeterminado
+            </label>
+            <label className="flex flex-col text-sm">
+              Demora entrega (días):
+              <input
+                type="number"
+                name="proveedor.demora_entrega"
+                value={formArticulo.proveedor.demora_entrega}
+                onChange={handleChangeArticulo}
+                min="0"
+                className="mt-1 border border-gray-300 rounded-md px-2 py-1"
+              />
+            </label>
+            <label className="flex flex-col text-sm">
+              Precio unitario:
+              <input
+                type="number"
+                name="proveedor.precio_unitario"
+                value={formArticulo.proveedor.precio_unitario}
+                onChange={handleChangeArticulo}
+                min="0"
+                step="0.01"
+                className="mt-1 border border-gray-300 rounded-md px-2 py-1"
+              />
+            </label>
+          </div>
+        )}
 
         <button
           type="submit"
-          className="bg-pink-600 text-white px-6 py-2 rounded-md hover:bg-pink-700 transition"
+          className="bg-pink-600 text-white py-2 rounded-md hover:bg-pink-700 transition"
         >
-          Asignar Proveedor
+          Agregar Artículo
         </button>
       </form>
 
+      {/* Mensaje */}
       {mensaje && (
-        <div className="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-md mt-4 max-w-xl text-center">
-          {mensaje}
-        </div>
+        <div className="text-center text-sm text-red-600 font-semibold">{mensaje}</div>
       )}
 
+      {/* Botón para abrir modal */}
       <button
-        onClick={() => setModalAbierto(true)}
-        className="bg-gray-800 text-white px-6 py-2 rounded-md hover:bg-gray-900 transition mt-6"
+        className="mt-4 bg-pink-500 text-white px-6 py-2 rounded-md hover:bg-pink-600 transition"
+        onClick={abrirModal}
       >
-        Ver lista de artículos
+        Gestionar Artículos
       </button>
 
-      {modalAbierto && (
+      {/* Modal para edición/eliminación */}
+      {modalOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50"
-          onClick={() => setModalAbierto(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
+          onClick={onClickFondo}
         >
           <div
-            className="bg-white p-6 rounded-md shadow-lg max-w-2xl w-full max-h-[80vh] overflow-auto text-black"
+            className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[75vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-semibold mb-4">Lista de Artículos</h2>
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
+            <h2 className="text-2xl font-bold mb-4 text-center">Editar / Eliminar Artículos</h2>
+            <table className="w-full text-left border border-gray-300 rounded-md">
+              <thead className="bg-gray-100">
                 <tr>
-                  <th className="border border-gray-300 px-3 py-1">ID</th>
-                  <th className="border border-gray-300 px-3 py-1">Nombre</th>
-                  <th className="border border-gray-300 px-3 py-1">
-                    Descripción
-                  </th>
-                  <th className="border border-gray-300 px-3 py-1">Precio</th>
+                  <th className="py-2 px-3 border-b">Descripción</th>
+                  <th className="py-2 px-3 border-b">Costo Compra</th>
+                  <th className="py-2 px-3 border-b">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {articulos.map((art) => (
-                  <tr key={art.id_articulo}>
-                    <td className="border border-gray-300 px-3 py-1 text-center">
-                      {art.id_articulo}
+                  <tr
+                    key={art.id_articulo}
+                    className="border-b last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td className="py-2 px-3">
+                      {editandoId === art.id_articulo ? (
+                        <input
+                          type="text"
+                          name="descripcion"
+                          value={formEdicion.descripcion}
+                          onChange={handleChangeEdicion}
+                          className="border border-gray-300 rounded-md px-2 py-1 w-full"
+                        />
+                      ) : (
+                        art.descripcion
+                      )}
                     </td>
-                    <td className="border border-gray-300 px-3 py-1">
-                      {art.nombre}
+                    <td className="py-2 px-3">
+                      {editandoId === art.id_articulo ? (
+                        <input
+                          type="number"
+                          name="costo_compra"
+                          value={formEdicion.costo_compra}
+                          onChange={handleChangeEdicion}
+                          min="0"
+                          step="0.01"
+                          className="border border-gray-300 rounded-md px-2 py-1 w-full"
+                        />
+                      ) : (
+                        art.costo_compra
+                      )}
                     </td>
-                    <td className="border border-gray-300 px-3 py-1">
-                      {art.descripcion || "-"}
-                    </td>
-                    <td className="border border-gray-300 px-3 py-1 text-right">
-                      ${art.precio.toFixed(2)}
+                    <td className="py-2 px-3 space-x-2">
+                      {editandoId === art.id_articulo ? (
+                        <>
+                          <button
+                            onClick={() => guardarEdicion(art.id_articulo)}
+                            className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition"
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            onClick={cancelarEdicion}
+                            className="bg-gray-400 text-white px-3 py-1 rounded-md hover:bg-gray-500 transition"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => iniciarEdicion(art)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600 transition"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => eliminarArticulo(art.id_articulo)}
+                            className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition"
+                          >
+                            Eliminar
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <button
-              onClick={() => setModalAbierto(false)}
-              className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-            >
-              Cerrar
-            </button>
+
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="bg-gray-600 text-white px-5 py-2 rounded-md hover:bg-gray-700 transition"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

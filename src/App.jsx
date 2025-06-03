@@ -5,6 +5,7 @@ import Footer from "./assets/components/Footer/footer.jsx";
 import OrdenDeCompra from "./assets/components/Orden-compra/orden-compra.jsx";
 import Ventas from "./assets/components/Ventas/ventas.jsx";
 import Proveedor from "./assets/components/Proveedores/proveedores.jsx";
+import AsignarProveedor from "./assets/components/AsignarProveedor/asignarProveedor.jsx";
 
 function App() {
   useEffect(() => {
@@ -19,6 +20,7 @@ function App() {
       <Header />
       <Proveedor />
       <Hero />
+      <AsignarProveedor/>
       <OrdenDeCompra />
       <Ventas />
       <Footer />
