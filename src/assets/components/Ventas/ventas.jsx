@@ -1,63 +1,93 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-const Ventas = () => {
-  const [ventas, setVentas] = useState([]);
-  const [nuevaVenta, setNuevaVenta] = useState("");
+const VentaForm = () => {
+  const [articulos, setArticulos] = useState([]);
+  const [detalles, setDetalles] = useState([{ id_articulo: "", cantidad: "" }]);
+  const [mensaje, setMensaje] = useState("");
 
-  const agregarVenta = () => {
-    if (nuevaVenta.trim() === "") return;
-    setVentas([...ventas, nuevaVenta]);
-    setNuevaVenta("");
+  // Traer artículos
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_URL}/articulos`)
+      .then(res => setArticulos(res.data))
+      .catch(() => setMensaje("Error al cargar artículos"));
+  }, []);
+
+  const handleDetalleChange = (i, field, value) => {
+    const nuevos = [...detalles];
+    nuevos[i][field] = value;
+    setDetalles(nuevos);
+  };
+
+  const agregarLinea = () => setDetalles([...detalles, { id_articulo: "", cantidad: "" }]);
+  const removerLinea = i => setDetalles(detalles.filter((_, idx) => idx !== i));
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (detalles.some(d => !d.id_articulo || !d.cantidad || d.cantidad <= 0)) {
+      return setMensaje("Completa todos los campos y cantidades > 0.");
+    }
+    try {
+      const payload = detalles.map(d => ({
+        id_articulo: Number(d.id_articulo),
+        cantidad: Number(d.cantidad)
+      }));
+      await axios.post(`${import.meta.env.VITE_API_URL}/ventas`, { articulos: payload });
+      setMensaje("✅ Venta registrada con éxito.");
+      setDetalles([{ id_articulo: "", cantidad: "" }]);
+    } catch (err) {
+      setMensaje(err.response?.data?.error || "Error al registrar venta.");
+    }
   };
 
   return (
-    <section id="ventas" className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-10 items-center">
-      <h1 className="text-3xl md:text-4xl font-bold text-center">
-        Módulo de <span className="text-pink-600">Ventas</span>
-      </h1>
+    <section className="bg-white text-gray-900 py-16 px-6 md:px-20 flex flex-col gap-4 items-center">
+      <h1 className="text-3xl font-bold">Registrar <span className="text-pink-600">Venta</span></h1>
+      <form onSubmit={handleSubmit} className="w-full max-w-2xl flex flex-col gap-4">
+        {detalles.map((d, i) => (
+          <div key={i} className="flex gap-2">
+            <select
+              className="flex-1 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-pink-500"
+              value={d.id_articulo}
+              onChange={e => handleDetalleChange(i, "id_articulo", e.target.value)}
+              required
+            >
+              <option value="">-- Seleccionar artículo --</option>
+              {articulos.map(a =>
+                <option key={a.id_articulo} value={a.id_articulo}>
+                  {a.descripcion} (Stock: {a.inventario_maximo})
+                </option>
+              )}
+            </select>
+            <input
+              type="number"
+              className="w-32 border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-pink-500"
+              placeholder="Cantidad"
+              min="1"
+              value={d.cantidad}
+              onChange={e => handleDetalleChange(i, "cantidad", e.target.value)}
+              required
+            />
+            {detalles.length > 1 && (
+              <button type="button" onClick={() => removerLinea(i)} className="text-red-500">✖️</button>
+            )}
+          </div>
+        ))}
 
-      {/* Alta de ventas */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center w-full max-w-xl">
-        <input
-          type="text"
-          placeholder="Descripción de la venta"
-          className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-          value={nuevaVenta}
-          onChange={(e) => setNuevaVenta(e.target.value)}
-        />
-        <button
-          onClick={agregarVenta}
-          className="bg-pink-600 text-white px-6 py-2 rounded-md hover:bg-pink-700 transition"
-        >
-          Registrar venta
+        <button type="button" onClick={agregarLinea}
+                className="self-start text-pink-600 hover:underline">
+          + Agregar línea
         </button>
-      </div>
 
-      {/* Listado de ventas */}
-      {ventas.length > 0 && (
-        <div className="w-full max-w-xl">
-          <h2 className="text-2xl font-semibold mb-4">Ventas registradas:</h2>
-          <ul className="space-y-2">
-            {ventas.map((venta, index) => (
-              <li
-                key={index}
-                className="flex justify-between items-center bg-gray-100 px-4 py-2 rounded-md"
-              >
-                <span>{venta}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <div className="mt-10">
-        <img
-           src="/images/logo-limpio.png"
-          alt="Control de stock"
-          className="w-[50px] max-w-md drop-shadow-lg mx-auto"
-        />
-      </div>
+        <button type="submit"
+                className="bg-pink-600 text-white py-2 rounded hover:bg-pink-700 transition">
+          Registrar Venta
+        </button>
+
+        {mensaje && <div className="bg-yellow-200 text-yellow-800 px-4 py-2 rounded">{mensaje}</div>}
+      </form>
     </section>
   );
 };
 
-export default Ventas;
+export default VentaForm;
