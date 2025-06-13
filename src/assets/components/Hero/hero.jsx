@@ -364,7 +364,9 @@ const Hero = () => {
             <table className="w-full text-left border border-gray-300 rounded-md">
               <thead className="bg-gray-100">
                 <tr>
+                  
                   <th className="py-2 px-3 border-b">Descripción</th>
+                  <th className="py-2 px-3 border-b">ID</th>
                   <th className="py-2 px-3 border-b">Costo Compra</th>
                   <th className="py-2 px-3 border-b">Acciones</th>
                 </tr>
@@ -389,6 +391,21 @@ const Hero = () => {
                       )}
                     </td>
                     <td className="py-2 px-3">
+                      {editandoId === art.id_articulo ? (
+                        <input
+                          type="number"
+                          name="costo_compra"
+                          value={formEdicion.costo_compra}
+                          onChange={handleChangeEdicion}
+                          min="0"
+                          step="0.01"
+                          className="border border-gray-300 rounded-md px-2 py-1 w-full"
+                        />
+                      ) : (
+                        art.id_articulo
+                      )}
+                    </td>
+                    <td className="py-2 px-0 justify-center text-center">
                       {editandoId === art.id_articulo ? (
                         <input
                           type="number"

@@ -5,7 +5,7 @@ const Proveedor = () => {
   const [formulario, setFormulario] = useState({
     cuit: "",
     razon_social: "",
-    telefono: ""
+    telefono: "",
   });
 
   const [mensaje, setMensaje] = useState("");
@@ -28,6 +28,20 @@ const Proveedor = () => {
     setMensaje("");
   };
 
+  const fetchProveedores = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/proveedores`);
+      setProveedores(res.data);
+    } catch (error) {
+      console.error("Error al traer proveedores", error);
+      setMensaje("Error al cargar la lista de proveedores.");
+    }
+  };
+
+  useEffect(() => {
+    fetchProveedores();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -37,9 +51,9 @@ const Proveedor = () => {
     }
 
     const dataToSend = {
-      ...formulario,
       cuit: formulario.cuit.trim(),
-      telefono: formulario.telefono?.trim() || null,
+      razon_social: formulario.razon_social.trim(),
+      telefono: formulario.telefono.trim() || null,
     };
 
     try {
@@ -61,29 +75,12 @@ const Proveedor = () => {
       console.error("Error al guardar proveedor:", error);
       setMensaje(
         error.response?.data?.error ||
-        (editandoId
-          ? "Error al actualizar proveedor"
-          : "Error al crear proveedor")
+          (editandoId
+            ? "Error al actualizar proveedor"
+            : "Error al crear proveedor")
       );
     }
   };
-
-  const fetchProveedores = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/proveedores`);
-      setProveedores(res.data);
-    } catch (error) {
-      console.error("Error al traer proveedores", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchProveedores();
-  }, []);
-
-  useEffect(() => {
-    if (modalOpen) fetchProveedores();
-  }, [modalOpen]);
 
   const handleEditar = (proveedor) => {
     setFormulario({
@@ -93,10 +90,10 @@ const Proveedor = () => {
     });
     setEditandoId(proveedor.id_proveedor);
     setMensaje("");
+    setModalOpen(false); // Cerramos modal para editar en el formulario principal
   };
 
   const handleEliminar = async (id) => {
-    // Aquí ya no preguntamos, la confirmación la hace el botón
     try {
       await axios.delete(`${API_URL}/proveedores/${id}`);
       setMensaje("Proveedor eliminado con éxito");
@@ -195,10 +192,18 @@ const Proveedor = () => {
                     className="border-b pb-2 flex justify-between items-start gap-4"
                   >
                     <div className="text-sm space-y-1">
-                      <p><strong>CUIT:</strong> {prov.cuit}</p>
-                      <p><strong>Razón Social:</strong> {prov.razon_social}</p>
-                      <p><strong>Teléfono:</strong> {prov.telefono || '-'}</p>
-                      <p><strong>Vigente:</strong> {prov.proveedor_vigente ? 'Sí' : 'No'}</p>
+                      <p>
+                        <strong>CUIT:</strong> {prov.cuit}
+                      </p>
+                      <p>
+                        <strong>Razón Social:</strong> {prov.razon_social}
+                      </p>
+                      <p>
+                        <strong>Teléfono:</strong> {prov.telefono || "-"}
+                      </p>
+                      <p>
+                        <strong>Vigente:</strong> {prov.proveedor_vigente ? "Sí" : "No"}
+                      </p>
                     </div>
                     <div className="flex flex-col gap-2">
                       <button
@@ -209,7 +214,11 @@ const Proveedor = () => {
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm("¿Estás seguro de eliminar este proveedor?")) {
+                          if (
+                            window.confirm(
+                              "¿Estás seguro de eliminar este proveedor?"
+                            )
+                          ) {
                             handleEliminar(prov.id_proveedor);
                           }
                         }}
